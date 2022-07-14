@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "yWHL6eyCON9fHGIJeGNOT+1HiEe2fgcbPGEcwI6h6aL2rKZd1Kp2vzIdOJR8XtReMa0T2cphT8Lg8lT0Hg1Onw==",
+  "success": true,
+  "projectFilePath": "F:\\dev\\live2d_chat_server\\live2d_chat_server.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\ukai\\.nuget\\packages\\commandlineparser\\2.9.1\\commandlineparser.2.9.1.nupkg.sha512"
+  ],
+  "logs": []
+}
