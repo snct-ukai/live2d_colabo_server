@@ -10,17 +10,26 @@ namespace live2d_chat_server
         public tracking_data(byte[] buffer){
             for(int i = 0; i < buffer.Length; i++){
                 if(i >= 28){
-                    throw IndexOutOfRangeException();
+                    throw new IndexOutOfRangeException();
                 }
                 byte[] tmp = buffer[(i * 4) .. (i * 4 + 4)];
                 data[i] = BitConverter.ToInt32(tmp);
             }
         }
 
-        public void set_data(byte[] buffer) => ref this.tracking_data(buffer);
+        public void set_data(byte[] buffer){
+            for(int i = 0; i < buffer.Length; i++){
+                if(i >= 28){
+                    throw new IndexOutOfRangeException();
+                }
+                byte[] tmp = buffer[(i * 4) .. (i * 4 + 4)];
+                data[i] = BitConverter.ToInt32(tmp);
+            }
+        }
+
 
         public int get_param(tracking_data_type param){
-            return data[param];
+            return data[(int)param];
         }
     }
 

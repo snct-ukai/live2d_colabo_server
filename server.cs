@@ -15,6 +15,16 @@ namespace live2d_chat_server
     remove_room = 7,
   }
 
+  class UdpState{
+    public UdpClient udpClient;
+    public IPEndPoint endPoint;
+
+    public UdpState(UdpClient udpClient, IPEndPoint endPoint){
+      this.udpClient = udpClient;
+      this.endPoint = endPoint;
+    }
+  }
+
   class Server{
     private Dictionary<IPEndPoint, string> clients = new Dictionary<IPEndPoint, string>();
     private Dictionary<string, List<IPEndPoint>> rooms = new Dictionary<string, List<IPEndPoint>>();
@@ -44,18 +54,17 @@ namespace live2d_chat_server
       else{
         this.server_socket = new UdpClient(this.ipe);
         for(;;){
-          IPEndPoint? remoteEP = null;
-          byte[] buffer = this.server_socket.ReceiveAsync(OnReceive);
-          if(clients[remoteEP] == null){
-            clients[remoteEP] = "";
-          }
+          this.server_socket.BeginReceive(this.OnReceive, new UdpState(this.server_socket, this.ipe));
         }
       }
     }
 
     private void OnReceive(IAsyncResult ar){
-      IPEndPoint ep = (IPEndPoint)ar.AsyncState;
-      byte[] message = server_socket.EndReceive(ar, ref ep);
+      if((UdpState)ar.AsyncState != null){
+        UdpClient udpClient = ((UdpState)ar.AsyncState).udpClient;
+        IPEndPoint endPoint = ((UdpState)ar.AsyncState).endPoint;
+        byte[] message = udpClient.EndReceive(ar, ref endPoint);
+      }
     }
   
     public void stop(){
