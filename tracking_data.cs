@@ -1,38 +1,27 @@
+using System.ComponentModel;
+using System.Collections.Generic;
 using System;
 
 namespace live2d_chat_server
 {
-    struct tracking_data{
-        public int ParamAngleX = 0;
-        public int ParamAngleY = 0;
-        public int ParamAngleZ = 0;
-        public int ParamEyeLOpen = 0;
-        public int ParamEyeLSmile = 0;
-        public int ParamEyeROpen = 0;
-        public int ParamEyeRSmile = 0;
-        public int ParamEyeBallX = 0;
-        public int ParamEyeBallY = 0;
-        public int? ParamEyeBallForm = null;
-        public int ParamBrowLY = 0;
-        public int ParamBrowRY = 0;
-        public int ParamBrowLX = 0;
-        public int ParamBrowRX = 0;
-        public int ParamBrowLAngle = 0;
-        public int ParamBrowRAngle = 0;
-        public int ParamBrowLForm = 0;
-        public int ParamBrowRForm = 0;
-        public int ParamMouthForm = 0;
-        public int ParamMouthOpenY = 0;
-        public int ParamCheek = 0;
-        public int ParamBodyAngleX = 0;
-        public int ParamBodyAngleY = 0;
-        public int ParamBodyAngleZ = 0;
-        public int ParamBreath = 0;
-        public int ParamHairFront = 0;
-        public int ParamHairSide = 0;
-        public int ParamHairBack = 0;
+    class tracking_data{
+        private int[] data = new int[28];
 
-        public tracking_data(){}
+        public tracking_data(byte[] buffer){
+            for(int i = 0; i < buffer.Length; i++){
+                if(i >= 28){
+                    throw IndexOutOfRangeException();
+                }
+                byte[] tmp = buffer[(i * 4) .. (i * 4 + 4)];
+                data[i] = BitConverter.ToInt32(tmp);
+            }
+        }
+
+        public void set_data(byte[] buffer) => ref this.tracking_data(buffer);
+
+        public int get_param(tracking_data_type param){
+            return data[param];
+        }
     }
 
     enum tracking_data_type{
