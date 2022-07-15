@@ -1,4 +1,5 @@
-﻿using System.Net.Sockets;
+﻿using System;
+using System.Net.Sockets;
 using System.Net;
 using System.Text;
 
@@ -44,12 +45,17 @@ namespace live2d_chat_server
         this.server_socket = new UdpClient(this.ipe);
         for(;;){
           IPEndPoint? remoteEP = null;
-          byte[] buffer = this.server_socket.Receive(ref remoteEP);
+          byte[] buffer = this.server_socket.ReceiveAsync(OnReceive);
           if(clients[remoteEP] == null){
             clients[remoteEP] = "";
           }
         }
       }
+    }
+
+    private void OnReceive(IAsyncResult ar){
+      IPEndPoint ep = (IPEndPoint)ar.AsyncState;
+      byte[] message = server_socket.EndReceive(ar, ref ep);
     }
   
     public void stop(){
