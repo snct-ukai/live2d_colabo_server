@@ -28,7 +28,7 @@ namespace live2d_chat_server
     }
   }
 
-  class Server{
+  class UDP_server{
     private Dictionary<IPEndPoint, int> clients = new Dictionary<IPEndPoint, int>();
     private Dictionary<int, List<IPEndPoint>> rooms = new Dictionary<int, List<IPEndPoint>>();
     private string local;
@@ -58,13 +58,13 @@ namespace live2d_chat_server
     }
     
     //singleton
-    private static Server instance = new Server();
+    private static UDP_server instance = new UDP_server();
 
-    public static Server getInstance(){
-      return instance;
+    public static ref UDP_server getInstance(){
+      return ref instance;
     }
   
-    private Server(string local = "127.0.0.1", int port = 9000){
+    private UDP_server(string local = "127.0.0.1", int port = 9000){
       this.local = local;
       this.port = port;
     }
@@ -209,5 +209,32 @@ namespace live2d_chat_server
       byte[] message = new byte[3]{flag, userid, roomID};
       this.send(endPoint, message);
     }
+
+    public Dictionary<IPEndPoint, int> Getclients(){
+      return new Dictionary<IPEndPoint, int>(this.clients);
+    }
+
+    public Dictionary<int, List<IPEndPoint>> Getrooms(){
+      return new Dictionary<int, List<IPEndPoint>>(this.rooms);
+    }
+  }
+
+  //TCP server
+  class TCP_server{
+    private string local;
+    private IPAddress ip = IPAddress.Any;
+    private int port;
+    private IPEndPoint? ipe;
+
+    //singleton
+    private static TCP_server instance = new TCP_server();
+    public static ref TCP_server Instance(){
+      return ref instance;
+    }
+    private TCP_server(string local = "127.0.0.1", int port = 9000){
+      this.local = local;
+      this.port = port;
+    }
+    
   }
 }
