@@ -21,7 +21,7 @@ namespace live2d_chat_server
         var parsed = (CommandLine.Parsed<Options>)parserResult;
         localIP = parsed.Value.Address;
         port = parsed.Value.Port;
-        Console.WriteLine("server launch with localIP:" + localIP + "\tport: {0}", port);
+        Console.WriteLine("Live2D Colabo Server is launched with localIP:" + localIP + "\tport: {0}", port);
       }
       else
       {
