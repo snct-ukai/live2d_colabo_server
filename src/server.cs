@@ -16,6 +16,8 @@ namespace live2d_chat_server
     ready = 9,
     client_not_connect = 10,
     reconnect = 11,
+    client_disconnect = 12,
+    TCP_socket_info = 13,
   }
 
   class UdpState{
@@ -70,18 +72,23 @@ namespace live2d_chat_server
     }
   
     public void start(string local = "127.0.0.1", int port = 9000){
-      this.local = local;
-      this.port = port;
-      this.ip = IPAddress.Parse(this.local);
-      this.ipe = new IPEndPoint(this.ip, this.port);
-      if(this.server_socket != null){
-        return;
-      }
-      else{
-        this.server_socket = new UdpClient(this.ipe);
-        for(;;){
-          this.server_socket.BeginReceive(this.OnReceive, new UdpState(this.server_socket, this.ipe));
+      try{
+        this.local = local;
+        this.port = port;
+        this.ip = IPAddress.Parse(this.local);
+        this.ipe = new IPEndPoint(this.ip, this.port);
+        if(this.server_socket != null){
+          return;
         }
+        else{
+          this.server_socket = new UdpClient(this.ipe);
+          for(;;){
+            this.server_socket.BeginReceive(this.OnReceive, new UdpState(this.server_socket, this.ipe));
+          }
+        }
+      }catch{
+        Console.WriteLine("UDP_server start error");
+        throw new Exception("UDP_server start error");
       }
     }
 
@@ -221,20 +228,40 @@ namespace live2d_chat_server
 
   //TCP server
   class TCP_server{
-    private string local;
-    private IPAddress ip = IPAddress.Any;
-    private int port;
-    private IPEndPoint? ipe;
+    private static string local = string.Empty;
+    private static IPAddress ip = IPAddress.Any;
+    private static int port;
+    private static IPEndPoint? ipe;
+    private TcpListener? server_socket;
 
     //singleton
     private static TCP_server instance = new TCP_server();
     public static ref TCP_server Instance(){
       return ref instance;
     }
-    private TCP_server(string local = "127.0.0.1", int port = 9000){
-      this.local = local;
-      this.port = port;
+    private TCP_server(string local = "127.0.0.1", int port = 9001){
+      TCP_server.local = local;
+      TCP_server.port = port;
+      ip = IPAddress.Parse(local);
+      TCP_server.ipe = new IPEndPoint(ip, port);
     }
     
+    public void start(string local = "127.0.0.1", int port = 9001){
+      try{
+        TCP_server.local = local;
+        TCP_server.port = port;
+        ip = IPAddress.Parse(local);
+        TCP_server.ipe = new IPEndPoint(ip, port);
+        if(this.server_socket != null){
+          this.server_socket.Stop();
+        }
+        this.server_socket = new TcpListener(ipe);
+        this.server_socket.Server.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.ReuseAddress, true);
+        this.server_socket.Start();
+      }catch{
+        Console.WriteLine("TCP server start failed");
+        throw new Exception("TCP server start failed");
+      }
+    }
   }
 }
