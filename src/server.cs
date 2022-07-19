@@ -75,20 +75,20 @@ namespace live2d_chat_server
       try{
         this.local = local;
         this.port = port;
-        this.ip = IPAddress.Parse(this.local);
-        this.ipe = new IPEndPoint(this.ip, this.port);
+        this.ip = IPAddress.Parse(ipString: this.local);
+        this.ipe = new IPEndPoint(address: this.ip, port: this.port);
         if(this.server_socket != null){
           return;
         }
         else{
-          this.server_socket = new UdpClient(this.ipe);
+          this.server_socket = new UdpClient(localEP: this.ipe);
           for(;;){
-            this.server_socket.BeginReceive(this.OnReceive, new UdpState(this.server_socket, this.ipe));
+            this.server_socket.BeginReceive(requestCallback: this.OnReceive, state: new UdpState(udpClient: this.server_socket, endPoint: this.ipe));
           }
         }
       }catch{
-        Console.WriteLine("UDP_server start error");
-        throw new Exception("UDP_server start error");
+        Console.WriteLine(value: "UDP_server start error");
+        throw new Exception(message: "UDP_server start error");
       }
     }
 
@@ -97,7 +97,7 @@ namespace live2d_chat_server
       if(udpState != null){
         UdpClient udpClient = udpState.udpClient;
         IPEndPoint? endPoint = udpState.endPoint;
-        byte[] message = udpClient.EndReceive(ar, ref endPoint);
+        byte[] message = udpClient.EndReceive(asyncResult: ar, remoteEP: ref endPoint);
       }
     }
 
@@ -107,7 +107,7 @@ namespace live2d_chat_server
       byte sendflag_mask = 0xf0;
       byte sendflag = (byte)((flag & sendflag_mask) >> 4);
       byte recvflag = (byte)(flag & recvflag_mask);
-      return new Flag(sendflag, recvflag);
+      return new Flag(sendFlag: sendflag, recvFlag: recvflag);
     }
 
     private ID GetID(byte[] message){
@@ -121,22 +121,22 @@ namespace live2d_chat_server
 
     private void send(IPEndPoint endPoint, byte[] message){
       if(this.server_socket == null){
-        this.ipe = new IPEndPoint(this.ip, this.port);
-        server_socket = new UdpClient(this.ipe);
+        this.ipe = new IPEndPoint(address: this.ip, port: this.port);
+        server_socket = new UdpClient(localEP: this.ipe);
       }
-      this.server_socket.SendAsync(message, message.Length, endPoint);
+      this.server_socket.SendAsync(datagram: message, bytes: message.Length, endPoint);
     }
   
     private void stop(){
       if(this.server_socket != null){
-        foreach(var room in this.rooms){
-          foreach(var client in room.Value){
+        foreach(KeyValuePair<int, List<IPEndPoint>> room in this.rooms){
+          foreach(IPEndPoint client in room.Value){
             byte flag = (byte)socket_flag.leave_room;
             flag += (byte)(room.Key << 4);
             byte userID = 0;
             byte roomID = (byte)(room.Key);
             byte[] message = new byte[3]{flag, userID, roomID};
-            this.send(client, message);
+            this.send(endPoint: client, message);
           }
         }
         this.server_socket.Close();
@@ -146,12 +146,12 @@ namespace live2d_chat_server
 
     //room process
     private void createRoom(IPEndPoint endPoint, int id){
-      if(this.rooms.ContainsKey(id)){
+      if(this.rooms.ContainsKey(key: id)){
         return;
       }
       else{
-        this.rooms.Add(id, new List<IPEndPoint>());
-        this.rooms[id].Add(endPoint);
+        this.rooms.Add(key: id, value: new List<IPEndPoint>());
+        this.rooms[key: id].Add(item: endPoint);
         byte flag = (byte)socket_flag.create_room;
         flag += (byte)(id << 4);
         byte roomID = (byte)id;
@@ -161,8 +161,8 @@ namespace live2d_chat_server
     }
 
     private void joinRoom(IPEndPoint endPoint, int id){
-      if(this.rooms.ContainsKey(id)){
-        this.rooms[id].Add(endPoint);
+      if(this.rooms.ContainsKey(key: id)){
+        this.rooms[key: id].Add(item: endPoint);
         byte flag = (byte)socket_flag.join_room;
         flag += (byte)(id << 4);
         byte roomID = (byte)id;
@@ -172,10 +172,10 @@ namespace live2d_chat_server
     }
 
     private void leaveRoom(IPEndPoint endPoint, int id){
-      if(this.rooms.ContainsKey(id)){
-        this.rooms[id].Remove(endPoint);
-        if(this.rooms[id].Count == 0){
-          this.rooms.Remove(id);
+      if(this.rooms.ContainsKey(key: id)){
+        this.rooms[key: id].Remove(item: endPoint);
+        if(this.rooms[key: id].Count == 0){
+          this.rooms.Remove(key: id);
         }
         byte flag = (byte)socket_flag.leave_room;
         flag += (byte)(id << 4);
@@ -186,23 +186,23 @@ namespace live2d_chat_server
     }
 
     private void removeRoom(int id){
-      if(this.rooms.ContainsKey(id)){
-        foreach(var client in this.rooms[id]){
+      if(this.rooms.ContainsKey(key: id)){
+        foreach(IPEndPoint client in this.rooms[key: id]){
           byte flag = (byte)socket_flag.remove_room;
           flag += (byte)(id << 4);
           byte roomID = (byte)id;
           byte[] message = new byte[2]{flag, roomID};
-          this.send(client, message);
+          this.send(endPoint: client, message);
         }
-        this.rooms.Remove(id);
+        this.rooms.Remove(key: id);
       }
     }
 
     //send tracking data
     private void sendTrackingData(int id, byte[] message){
-      if(this.rooms.ContainsKey(id)){
-        foreach(var client in this.rooms[id]){
-          this.send(client, message);
+      if(this.rooms.ContainsKey(key: id)){
+        foreach(IPEndPoint client in this.rooms[key: id]){
+          this.send(endPoint: client, message);
         }
       }
     }
@@ -212,17 +212,17 @@ namespace live2d_chat_server
       byte id = 0;
       byte flag = (byte)(((byte)socket_flag.ack << 4) + recvflag);
       byte roomID = (byte)id;
-      byte userid = (byte)clients[endPoint];
+      byte userid = (byte)clients[key: endPoint];
       byte[] message = new byte[3]{flag, userid, roomID};
       this.send(endPoint, message);
     }
 
     public Dictionary<IPEndPoint, int> Getclients(){
-      return new Dictionary<IPEndPoint, int>(this.clients);
+      return new Dictionary<IPEndPoint, int>(dictionary: this.clients);
     }
 
     public Dictionary<int, List<IPEndPoint>> Getrooms(){
-      return new Dictionary<int, List<IPEndPoint>>(this.rooms);
+      return new Dictionary<int, List<IPEndPoint>>(dictionary: this.rooms);
     }
   }
 
@@ -242,25 +242,25 @@ namespace live2d_chat_server
     private TCP_server(string local = "127.0.0.1", int port = 9001){
       TCP_server.local = local;
       TCP_server.port = port;
-      ip = IPAddress.Parse(local);
-      TCP_server.ipe = new IPEndPoint(ip, port);
+      ip = IPAddress.Parse(ipString: local);
+      TCP_server.ipe = new IPEndPoint(address: ip, port);
     }
     
     public void start(string local = "127.0.0.1", int port = 9001){
       try{
         TCP_server.local = local;
         TCP_server.port = port;
-        ip = IPAddress.Parse(local);
-        TCP_server.ipe = new IPEndPoint(ip, port);
+        ip = IPAddress.Parse(ipString: local);
+        TCP_server.ipe = new IPEndPoint(address: ip, port);
         if(this.server_socket != null){
           this.server_socket.Stop();
         }
-        this.server_socket = new TcpListener(ipe);
-        this.server_socket.Server.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.ReuseAddress, true);
+        this.server_socket = new TcpListener(localEP: ipe);
+        this.server_socket.Server.SetSocketOption(optionLevel: SocketOptionLevel.IP, optionName: SocketOptionName.ReuseAddress, optionValue: true);
         this.server_socket.Start();
       }catch{
-        Console.WriteLine("TCP server start failed");
-        throw new Exception("TCP server start failed");
+        Console.WriteLine(value: "TCP server start failed");
+        throw new Exception(message: "TCP server start failed");
       }
     }
   }
